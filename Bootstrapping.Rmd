@@ -1,0 +1,168 @@
+---
+title: "Bootstraping"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+## Introduction
+
+
+
+* Given some samples $X_1, X_2, \dots, X_n \sim f(X|\theta)$, what is the standard error for the estimator $\hat{\theta}$ for $\theta$
+
+* Say if we know $\theta$, we can simulate multiple samples 
+
+sample 1: $X_1, X_2, \dots, X_n \sim f(X|\theta)$
+
+Sample 2: $Y_1, Y_2, \dots, Y_n \sim f(X|\theta)$
+
+Sample k: $Z_1, Z_2, \dots, Z_n \sim f(X|\theta)$
+
+For each sample, we can get an estimate of $\theta$, can calculate the standard error. 
+
+* The challenge is we do not know $\theta$ to begin with. 
+
+
+# BootStraping
+
+* Boot Strap is a method to obtain the sampling distribution of estimators using simulations. 
+
+* In traditional simulation or a parametric framework, 
+we assume that the data $X = \{x_1, ..., x_n\}$ comes from a given distribution $F$ or some model P.
+* We usually estimate a given parameter $\theta$ from a sample X. Since X is random, $\theta$ is random itself. 
+* We can sample X multiple times from F to give us different estimates 
+
+# Bootstrap for Poisson Distribution 
+
+Say we have some data coming Poisson distribtuion, the MLE is $\lambda$ is 5 and we need to estimate the standard error. 
+
+Repeatedly simulate $X_1, \dots, X_n$ IID∼ Poisson(5),
+compute $\lambda$ from each sample 
+for each simulation, and compute the empirical
+standard deviation of $\lambda$
+across simulations.
+
+```{r Poisson bootstrap}
+# Input: Data vector X
+lambda_hat = 5
+n = 100
+# Perform 100000 bootstrap simulations
+B=100000
+lambda_hat_star = numeric(B)
+for (i in 1:B) {
+X_star = rpois(n,lambda_hat)
+lambda_hat_star[i] = mean(X_star)
+}
+print(sd(lambda_hat_star))
+
+```
+
+## Non Parametric bootstrap
+* During non-parametric bootstrap, we do not make any distribution assumption regarding F but rather generate different data samples 
+from the observed data itself. 
+
+* We then estimate parameter $\theta$ based on the newly created samples.
+
+
+
+
+```{r, echo=FALSE}
+knitr::include_graphics("bootstrap_image.png")
+```
+
+```{r non parametric bootstrap}
+# Perform 100000 bootstrap simulations
+lambda_hat = 5
+n = 100
+X = rpois(n,lambda_hat)
+###
+B=100000
+lambda_hat_star = numeric(B)
+for (i in 1:B) {
+X_star = sample(X, size=n, replace=TRUE)
+lambda_hat_star[i] = mean(X_star)
+}
+print(sd(lambda_hat_star))
+
+```
+
+# Bootstrap Schematic
+
+*The population is to the sample as the sample is to the bootstrap samples.*
+
+
+
+* Each bootstrap data set contains n observations, sampled with replacement from the original data set.
+* Each bootstrap data set is used to obtain an estimate of the parameter of interest.
+
+
+
+## Regression confidence intervals using bootrap vs simulation
+
+[In class discussion]
+
+
+## Cross-validation vs the Bootstrap
+
+**Cross-validation**: It is used to obtain an  estimate of the **test error**.
+
+**Bootstrap**: provides the **standard error** of estimates.
+
+
+## Application of Bootstrap 
+
+# Portfolio Optimization Example
+
+* Suppose that we wish to invest a fixed sum of money in two financial assets that yield returns of X and Y , respectively, where X and Y are random quantities. 
+* We will invest a fraction $\alpha$ of our money in X, and will invest the remaining 1 − $\alpha$ in Y .
+* Return ia $\alpha$ X + (1 − $\alpha$ )Y 
+* Variance is Var($\alpha$ X + (1 − $\alpha$ )Y ) since there is variability associated with the returns on these two assets
+* We wish to choose $\alpha$ to minimize the total risk, or variance, of our investment. 
+
+* The $\alpha$ value that minimizes the risk is given by [HW question]
+
+$$\alpha = \frac{\sigma_Y^2 - \sigma_{XY}^2}{\sigma_X^2 + \sigma_Y^2 - \sigma_{XY}^2}$$ 
+* Here Var(X) = $\sigma_X^2$, Cov(X,Y) = $\sigma_{XY}^2$, Var(Y) = $\sigma_Y^2$ In reality these qunitites are not known. 
+We can compute the estimates for these quantities for using a data set for past estimates. We create an estimate of $\alpha$
+for each bootstrap sample based on sample variant estimate $\hat{\sigma_X}$, $\hat{\sigma_Y}$ and $\hat{\sigma_{XY}}$
+
+
+```{r, out.width="50%",echo=FALSE}
+knitr::include_graphics("bootstrap_sample.png")
+```
+
+## BootStrap Code
+
+* The library boot is used to perform the  bootstrap
+* The function input is the parameter estimation function from the sampled dataset
+
+```{r, message = FALSE, warning = FALSE}  
+library(ISLR2)
+library(boot)
+attach(Portfolio)
+```
+```{r alphafunc}
+
+
+alpha.fn <- function(data, index) {
+X <- data$X[index]
+Y <- data$Y[index]
+(var(Y) - cov(X, Y)) / (var(X) + var(Y) - 2 * cov(X, Y))
+}
+boot(Portfolio, alpha.fn, R = 1000)
+```
+
+
+
+```{r, out.width="50%",echo=FALSE, fig.cap="Left: A histogram of the estimates obtained by generating 1,000 simulated data sets from the true population. Center: A histogram of the estimates obtained from 1,000 bootstrap samples from a single data set. Right: The estimates in the left and center panels are shown as boxplots. In each panel, the pink line indicates the true value of "}
+knitr::include_graphics("real_vs_simulation_portfolio.png")
+```
+
+
+

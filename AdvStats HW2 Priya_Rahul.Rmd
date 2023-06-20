@@ -1,0 +1,107 @@
+---
+title: "ADVStats_Priya_Rahul"
+author: "Priya Iddalgi"
+date: "2023-01-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+
+data("Auto", package = "ISLR")
+
+#(a)
+#creating scatter plot matrix
+pairs(Auto)
+
+#inference
+
+#Displacement and weight are highly correlated.
+#Horsepower and weight are highly correlated.
+
+```
+```{r}
+#(b)
+#computing matrix of correlations and excluding "name" column
+
+cor(Auto[, names(Auto) !="name"])
+```
+```{r}
+#(c)
+
+#creating regression model
+model = lm(mpg ~. -name, data = Auto)
+summary(model)
+
+#i)Yes, there is a relationship between the predictors and response. The model has an R-sq value of 82%, which describes the proportion of variation in the response predicted by these independent variables. 
+
+#ii) The statistically significant predictors are : Displacement, Weight, Year and  Origin. We conclude this through their individual p-values.
+
+#iii)The coefficient for year is 0.75. This means that when every other predictor is held constant, if the year changes by 1 unit, the mpg changes by 0.75. In other words, mpg increases by 0.75 units each year.
+```
+```{r}
+#(d)
+#creating diagnostic plots
+
+par(mfrow = c(2,2))
+plot(model)
+
+#potential inferences and issues with the diagnostic plots :
+
+#Residuals vs Fitted : The pattern in the graph shows that there may have been some non-linear effects which were not captured by our model. There appears to be a U-shape in the graph. This graph suggests that all the residuals do not have a constant variance. There may be some heteroskedasticity problem associated.
+
+#Normal Q-Q: The residuals seem to be normally distributed. There are some outliers (obs 326,327,323) at the right hand side.
+
+#Scale-Location: This plot displays if there are outliers in the data.  Based on this graph, most values are within the range of [0,2], but observation 326,327,323 might be outliers.
+
+#Residuals vs Leverage: There seem to be no leverage points, other than (14) labelled on the graph.
+```
+```{r}
+#(e)
+#Let's add interaction terms to our initial model
+
+#first,choosing interaction terms between significant variables
+
+model2 = lm(mpg ~.-name+displacement*weight, data = Auto)
+summary(model2)
+#Displacement and weight seem to have significant interaction effects and this model has an Rsq of 85.8%
+
+model3 = lm(mpg ~.-name+year*origin, data = Auto)
+summary(model3)
+#Year and Origin seem to have significant interaction effects and this model has an Rsq of 82.6%
+
+#including both interaction terms
+model4 = lm(mpg ~.-name+displacement:weight + year:origin, data = Auto)
+summary(model4)
+
+#removing insignificant terms from the model
+model5 = lm(mpg ~.-name-cylinders-acceleration+displacement:weight + year*origin, data = Auto)
+summary(model5)
+
+#From model 5, we have included two significant interaction terms, displacement&weight , as well as year&origin. We have included non-significant predictors such as 'cylinders' and 'acceleration'. We get an overall significant model with an Rsq 86.3%.
+
+```
+```{r}
+#(f)
+#Trying different transformations on the predictors
+
+#taking log of acceleration
+model6 <- lm(mpg ~ . -name + log(acceleration), data=Auto)
+summary(model6)
+
+#log acceleration appears to be highly significant. Overall Rsq is 83%
+
+#squaring displacement
+model7 <- lm(mpg ~ . -name + I(displacement^2), data=Auto)
+summary(model7)
+#displacement sq. term seems to be significant.Overall Rsq is 85%
+
+```
+

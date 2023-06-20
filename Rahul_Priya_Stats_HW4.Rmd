@@ -1,0 +1,107 @@
+---
+title: "Rahul_Priya_HW4_Stats"
+author: "Rahul Rajput"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(jpeg)
+tiger = readJPEG('tiger.jpeg')
+dim(tiger)
+
+# Separating RGB matrices
+tiger_red = tiger[,,1]
+tiger_green = tiger[,,2]
+tiger_blue = tiger[,,3]
+# All three matrices have the same dimensions of 802x1200
+
+# Performing PCA on each RGB Matrix
+tiger_red_pca = prcomp(tiger_red, center = FALSE)
+tiger_green_pca = prcomp(tiger_green, center = FALSE)
+tiger_blue_pca = prcomp(tiger_blue, center = FALSE)
+
+###########################################################################################################################
+z = summary(tiger_red_pca)$importance
+summary(tiger_red_pca)$importance
+yeet_loadings = tiger_red_pca$rotation
+yeet_scores = tiger_red_pca$x
+
+sum(yeet_scores[,1])
+sum(yeet_scores[2,])
+###########################################################################################################################
+
+
+plot(1:802,summary(tiger_red_pca)$importance['Proportion of Variance',],type="l",col="red",xlab='K dimensions',ylab = 'Prop of Variance')
+lines(1:802,summary(tiger_blue_pca)$importance['Proportion of Variance',],col="blue")
+lines(1:802,summary(tiger_green_pca)$importance['Proportion of Variance',],col="green")
+
+# Plot for Cumulative Variance explained as K increases
+plot(1:802,summary(tiger_red_pca)$importance['Cumulative Proportion',],col='red',xlab="K dimensions", ylab='Cumulative Variance explained',type="l")#,type="l",col="red")
+lines(1:802,summary(tiger_blue_pca)$importance['Cumulative Proportion',],col='blue')#,col="green")
+lines(1:802,summary(tiger_green_pca)$importance['Cumulative Proportion',],col='green')#,col="green")
+
+
+# Reconstructing Images
+
+# Loadings represent how much each original variable contributes to each principal component, while scores represent how much # each observation is represented by each principal component
+
+# PCA Reconstruction = PC Scores(EigenVectors) x Loadings.T + Mean (=0 for this case)
+# PC Scores = Cosines between Original axis and the new axes or the new Components or the new variables.
+# PC Loadings = Correlation between the PCs or New axes and the original std variables.
+
+y = tiger_red_pca$x 
+yy = tiger_red_pca$rotation # Component Loading values
+
+compression_ratios = c()
+original_img_size = file.info("tiger.jpeg")$size
+for (k in c(3, 5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 802)) {
+  
+  # Choosing K principle components at a time:
+  reconstruction_red = tiger_red_pca$x[, 1:k] %*% t(tiger_red_pca$rotation[, 1:k]) + tiger_red_pca$center
+  reconstruction_green = tiger_green_pca$x[, 1:k] %*% t(tiger_green_pca$rotation[, 1:k]) + tiger_green_pca$center
+  reconstruction_blue = tiger_blue_pca$x[, 1:k] %*% t(tiger_blue_pca$rotation[, 1:k]) + tiger_blue_pca$center
+  
+  # Reconstructing image from new PCA RGB values
+  Reconstructed_img = tiger
+  Reconstructed_img[,,1] = reconstruction_red
+  Reconstructed_img[,,2] = reconstruction_green
+  Reconstructed_img[,,3] = reconstruction_blue
+  
+  #jpeg(Reconstructed_img, filename = paste("~/Desktop/MSBA/Winter/442 - Advanced Statistics/HW4/tiger_dim_", k, ".jpeg"))
+  writeJPEG(Reconstructed_img, paste("tiger_dim_",k,".jpg"))
+  
+  # Getting compression ratios
+  compression_ratios = c(compression_ratios, file.info(paste("tiger_dim_",k,".jpg"))$size/original_img_size)
+}
+
+plot(c(3, 5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 802), compression_ratios, type = "l", xlab="Dimensions", ylab =  "CompressionRatio")
+points(c(3, 5, 10, 25, 50, 100, 150, 200, 250, 300, 350, 802), compression_ratios)
+
+sprintf("The reason the compression ratio plateaus at 0.4 is beacuse of a difference in the dpi of the original image and the generated images.")
+```
+

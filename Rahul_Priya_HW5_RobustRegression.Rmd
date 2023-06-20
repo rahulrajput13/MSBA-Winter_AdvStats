@@ -1,0 +1,84 @@
+---
+title: "Rahul and Priya 442 HW5 RObust Regression"
+author: "Rahul Rajput"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Robust Linear Regression
+```{r}
+library(faraway)
+library(MASS)
+fat = faraway::fat
+```
+Part 1
+```{r}
+linear_model = lm(brozek~.,data=fat)
+robust_model = rlm(brozek~.,data=fat)
+
+summary(linear_model)
+plot(linear_model)
+```
+
+```{r}
+summary(robust_model)
+plot(robust_model)
+```
+The Residual Standard Error for the Robust Regression and the std errors for coefficients are lower than those in the OLS model.
+
+Analysing the leverage vs residuals plot, there are no outliers in the robust regression whereas there are three residuals in the linear regression model.
+
+From the fitted values vs residuals plot, the residual values for the non outlier values are closer to the red line or smaller in magnitude in the robust regression model compared to the OLS model. The red line in the plot for robust regression also shows less deviation compared to the OLS plot.
+
+The scale-location vs standardised residuals plot also shows more deviance for OLS compared to Robust regression implying that there is more heteroscedasticity present in the OLS model. The avg error at different fitted values are different.
+Overall it seems as if the effect of extreme outliers is less pronounced in the robust regression model.
+
+Part 2
+```{r}
+plot(fat$height, fat$weight)
+text(fat$height, fat$weight, labels=fat$weight)
+
+outlier1 = subset(fat, weight == 363.15)
+outlier2 = subset(fat, weight == 205)
+
+sprintf("The outliers from the weigth vs height plot are brozek value = %f and brozek value = %f",outlier1$brozek, outlier2$brozek)
+
+sprintf("The outliers from the OLS leverage vs std residuals plot are brozek value = %f and brozek value = %f and brozek value = %f",fat[42,1],fat[96,1],fat[169,1])
+
+outlier3 = fat[33,1]
+outlier4 = fat[169,1]
+outlier5 = fat[182,1]
+
+sprintf("The outliers from the robust regression are brozek value = %f and brozek value = %f and brozek value = %f",outlier3, outlier4, outlier5)
+
+```
+The outliers observed from the plot of weight vs height and the Robust Regression are different. However, according to the Leverage vs Residuals plot there are not outliers in the Robust Regression model. This could be because both OLS and Robust Regressions handle outliers differently and therefore the residual values are different. 
+
+Since Robust Regression assigns less weights to observations lying further from the mean which reduces the overall impact of such outliers. Since these data points would now have less leverage or influence the residual values would have a lower contribution from these data points compared to the OLS method. 
+
+It is likely that the outlier points from the height vs weight plot were down weighted low enough that they do not appear as outliers. The actual outliers identified in the OLS model seem to have been brozek value = 31.700000 and brozek value = 17.300000 whose weightage to the output would have been reduced within the Robust Regression Model.
+ 

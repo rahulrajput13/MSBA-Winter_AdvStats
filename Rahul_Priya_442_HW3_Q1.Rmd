@@ -1,0 +1,138 @@
+---
+title: "Rahul_Priya_442_HW3"
+author: "Rahul Rajput"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+#install.packages('faraway')
+library('faraway')
+library(ggplot2)
+```
+
+Question 1 - Non Constant Variance
+
+Part 1
+
+```{r}
+## Part 1
+ggplot(pipeline, aes(x=Field, y=Lab))+geom_point()
+
+model = lm(Lab ~ Field, data=pipeline)
+ggplot(pipeline, aes(x=Field, y=model$res))+geom_point() +
+labs(x="Field values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+```
+
+Part 2
+Log Transformations
+
+```{r}
+## Part 2
+## Log Transformations
+model_xlog = lm(Lab ~ log(Field), data=pipeline)
+ggplot(pipeline, aes(x=log(Field), y=model_xlog$res))+geom_point() +
+labs(x="Log(Field) values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_ylog = lm(log(Lab) ~ Field, data=pipeline)
+ggplot(pipeline, aes(x=Field, y=model_ylog$res))+geom_point() +
+labs(x="Log(Lab) values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_xylog = lm(log(Lab) ~ log(Field), data=pipeline)
+ggplot(pipeline, aes(x=log(Field), y=model_xylog$res))+geom_point() +
+labs(x="Log(Field) values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+```
+
+Square Root Transformations
+
+```{r}
+## Square Root Transformations
+model_xsqrt = lm(Lab ~ sqrt(Field), data=pipeline)
+ggplot(pipeline, aes(x=sqrt(Field), y=model_xsqrt$res))+geom_point() +
+labs(x="Sqrt(Field) values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_ysqrt = lm(sqrt(Lab) ~ Field, data=pipeline)
+ggplot(pipeline, aes(x=Field, y=model_ysqrt$res))+geom_point() +
+labs(x="Field values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_xysqrt = lm(sqrt(Lab) ~ sqrt(Field), data=pipeline)
+ggplot(pipeline, aes(x=sqrt(Field), y=model_xysqrt$res))+geom_point() +
+labs(x="sqrt(Field values)", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+```
+
+Inverse Transformations
+
+```{r}
+# Inverse Transformations
+model_xinv = lm(Lab ~ 1/Field, data=pipeline)
+ggplot(pipeline, aes(x=1/Field, y=model_xinv$res))+geom_point() +
+labs(x="1/Field values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_yinv = lm(1/Lab ~ Field, data=pipeline)
+ggplot(pipeline, aes(x=Field, y=model_yinv$res))+geom_point() +
+labs(x="Field values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+model_xyinv = lm(1/Lab ~ 1/Field, data=pipeline)
+ggplot(pipeline, aes(x=1/Field, y=model_xyinv$res))+geom_point() +
+labs(x="1/Field values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+```
+
+```{r}
+sprintf("From the above transformations applied to the x variable, y variable individually and together, the transformation which provided constant variance was a log-log transformation or a log-linear model.")
+```
+
+
+Question 2 - Box-Cox Transformations
+
+```{r}
+#install.packages('MASS')
+library('MASS')
+
+boxcox(lm(ozone$O3 ~ ozone$temp + ozone$humidity + ozone$ibh))
+sprintf("From the plot we can see that the optimal lambda is around 0.25")
+boxcoxmodel = boxcox(lm(ozone$O3 ~ ozone$temp + ozone$humidity + ozone$ibh))
+lambda = boxcoxmodel$x[which.max(boxcoxmodel$y)]
+sprintf("The optimal lambda is: %f",lambda)
+
+model_ozone_transformed = lm(((ozone$O3^lambda)-1)/lambda ~ ozone$temp + ozone$humidity + ozone$ibh)
+model_ozone_log = lm(log(ozone$O3) ~ ozone$temp + ozone$humidity + ozone$ibh)
+model_ozone = lm(ozone$O3 ~ ozone$temp + ozone$humidity + ozone$ibh)
+
+summary(model_ozone)
+summary(model_ozone_transformed)
+summary(model_ozone_log)
+
+ggplot(ozone, aes(x=fitted(model_ozone), y=model_ozone$res))+geom_point() +
+labs(x="Fitted Values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+ggplot(ozone, aes(x=fitted(model_ozone_transformed), y=model_ozone_transformed$res))+geom_point() +
+labs(x="Fitted Values", y="Residuals") +geom_hline(yintercept=0) #+ geom_smooth()
+
+sprintf("The ideal Box-Cox transformation was performed using lambda = %f. After transforming the response variable accordingly we can see that the variance can be approximated as being constant.",lambda)
+sprintf("Using the appropriately transformed y variable also provided the highest R-squared value out of the non-transformed and the log model.")
+```
+
